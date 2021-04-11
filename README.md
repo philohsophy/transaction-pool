@@ -1,2 +1,3 @@
 # dummy-blockchain-transaction-pool
-Pool for dummy blockchain transactions
+
+Transaction Pool for Dummy-Blockchain project
