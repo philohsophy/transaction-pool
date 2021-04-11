@@ -1,0 +1,70 @@
+openapi: 3.0.3
+
+info:
+  title: Transaction Pool
+  version: 0.0.1
+  description: Backend Service - Pool for Transactions
+  contact:
+    name: GIT
+    url: https://github.com/philohsophy/dummy-blockchain-transaction-pool
+
+tags:
+  -  name: Transactions
+
+paths:
+  /transactions:
+    get:
+      summary: Get all transactions
+      tags:
+        - Transactions
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transactions'
+
+components:
+  schemas:
+    Address:
+      type: object
+      required:
+        - name
+        - street
+        - houseNumber
+        - town
+      properties:
+        name:
+          type: string
+        street:
+          type: string
+        houseNumber:
+          type: string
+        town:
+          type: string
+        
+    Transaction:
+      type: object
+      required:
+        - senderAddress
+        - recipientAddress
+        - value
+      properties:
+        id:
+          type: integer
+          minimum: 0
+        senderAddress:
+          $ref: '#/components/schemas/Address'
+        recipientAddress:
+          $ref: '#/components/schemas/Address'
+        value:
+          type: number
+          format: float
+          minimum: 0.01
+    Transactions:
+      type: array
+      items:
+        $ref: '#/components/schemas/Transaction'
+
+
