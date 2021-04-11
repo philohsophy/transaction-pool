@@ -2,46 +2,53 @@ package main
 
 import (
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 
 	models "github.com/philohsophy/dummy-blockchain-transaction-pool/transaction"
 )
 
-type myHandler struct{}
+var transactionQueue []models.Transaction
 
-func (*myHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "URL: "+r.URL.String())
-}
-
-func Tmp(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "version 2")
-}
-
-func TransactionHandler(w http.ResponseWriter, r *http.Request) {
+func initTransactionPool() {
 	aR := models.Address{Name: "Alan", Street: "Baker Street", HouseNumber: 1, Town: "London"}
 	aS := models.Address{Name: "Bob", Street: "Hauptstrasse", HouseNumber: 11, Town: "Berlin"}
 
-	transactions := []models.Transaction{
-		{RecipentAddress: aR, SenderAddress: aS, Value: "123"},
-		{RecipentAddress: aR, SenderAddress: aS, Value: "456"},
-		{RecipentAddress: aR, SenderAddress: aS, Value: "789"},
+	transactionQueue = append(transactionQueue, models.Transaction{Id: 1, RecipentAddress: aR, SenderAddress: aS, Value: "123"})
+	transactionQueue = append(transactionQueue, models.Transaction{Id: 2, RecipentAddress: aR, SenderAddress: aS, Value: "456"})
+	transactionQueue = append(transactionQueue, models.Transaction{Id: 3, RecipentAddress: aR, SenderAddress: aS, Value: "789"})
+}
+
+func ListTransactions(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(transactionQueue)
+}
+
+func GetTransaction(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Invalid transaction Id"))
 	}
 
-	json.NewEncoder(w).Encode(transactions)
+	for _, transaction := range transactionQueue {
+		if transaction.Id == id {
+			json.NewEncoder(w).Encode(transaction)
+		}
+	}
+	w.WriteHeader(http.StatusNotFound)
 }
 
 func main() {
-	mux := http.NewServeMux()
+	initTransactionPool()
 
-	mux.Handle("/", &myHandler{})
-
-	mux.HandleFunc("/tmp", Tmp)
-
-	mux.HandleFunc("/transactions", TransactionHandler)
-
-	err := http.ListenAndServe(":8080", mux)
+	r := mux.NewRouter()
+	r.HandleFunc("/transactions", ListTransactions)
+	r.HandleFunc("/transactions/{id}", GetTransaction)
+	err := http.ListenAndServe(":8080", r)
 	if err != nil {
 		log.Fatal(err)
 	}
