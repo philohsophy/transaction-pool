@@ -1,5 +1,7 @@
 package models
 
+import "github.com/google/uuid"
+
 type Address struct {
 	Name        string `json:"name"`
 	Street      string `json:"street"`
@@ -8,8 +10,8 @@ type Address struct {
 }
 
 type Transaction struct {
-	Id              int     `json:"id"`
-	RecipentAddress Address `json:"recipientAddress"`
-	SenderAddress   Address `json:"senderAddress"`
-	Value           string  `json:"value"`
+	Id              uuid.UUID `json:"id"`
+	RecipentAddress Address   `json:"recipientAddress"`
+	SenderAddress   Address   `json:"senderAddress"`
+	Value           string    `json:"value"`
 }
