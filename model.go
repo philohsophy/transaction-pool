@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 
 	"github.com/google/uuid"
@@ -10,19 +11,33 @@ import (
 type Address struct {
 	Name        string `json:"name"`
 	Street      string `json:"street"`
-	HouseNumber int    `json:"houseNumber"`
+	HouseNumber string `json:"houseNumber"`
 	Town        string `json:"town"`
 }
 
 type Transaction struct {
-	Id              uuid.UUID `json:"id"`
-	RecipentAddress Address   `json:"recipientAddress"`
-	SenderAddress   Address   `json:"senderAddress"`
-	Value           float32   `json:"value"`
+	Id               uuid.UUID `json:"id"`
+	RecipientAddress Address   `json:"recipientAddress"`
+	SenderAddress    Address   `json:"senderAddress"`
+	Value            float32   `json:"value"`
 }
 
 func (t *Transaction) createTransaction(db *sql.DB) error {
-	return errors.New("Not implemented")
+	t.Id = uuid.New()
+	recipientAddressJson, _ := json.Marshal(t.RecipientAddress)
+	senderAddressJson, _ := json.Marshal(t.SenderAddress)
+
+	err := db.QueryRow(`
+		INSERT INTO transactions
+		VALUES($1, $2, $3, $4)
+		RETURNING id`,
+		t.Id, recipientAddressJson, senderAddressJson, t.Value).Scan(&t.Id)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (t *Transaction) getTransaction(db *sql.DB) error {
