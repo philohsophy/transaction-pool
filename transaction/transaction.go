@@ -10,8 +10,8 @@ type Address struct {
 }
 
 type Transaction struct {
-	Id              uuid.UUID `json:"id"`
-	RecipentAddress Address   `json:"recipientAddress"`
-	SenderAddress   Address   `json:"senderAddress"`
-	Value           string    `json:"value"`
+	Id               uuid.UUID `json:"id"`
+	RecipientAddress Address   `json:"recipientAddress"`
+	SenderAddress    Address   `json:"senderAddress"`
+	Value            string    `json:"value"`
 }
