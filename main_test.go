@@ -2,6 +2,8 @@ package main_test
 
 import (
 	"log"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -41,3 +43,29 @@ const tableCreationQuery = `CREATE TABLE IF NOT EXISTS transactions
 	value NUMERIC(10,2) NOT NULL DEFAULT 0.00,
 	CONSTRAINT transactions_pkey PRIMARY KEY (id)
 )`
+
+func executeRequest(req *http.Request) *httptest.ResponseRecorder {
+	rr := httptest.NewRecorder()
+	a.Router.ServeHTTP(rr, req)
+
+	return rr
+}
+
+func checkResponseCode(t *testing.T, expectedCode, actualCode int) {
+	if expectedCode != actualCode {
+		t.Errorf("Expected response code %d. Got %d\n", expectedCode, actualCode)
+	}
+}
+
+func TestEmptyTable(t *testing.T) {
+	clearTable()
+
+	req, _ := http.NewRequest("GET", "/transactions", nil)
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	if body := response.Body.String(); body != "[]" {
+		t.Errorf("Expected an empty array of transactions. Got %s", body)
+	}
+}
