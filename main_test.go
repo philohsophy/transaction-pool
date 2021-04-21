@@ -3,12 +3,14 @@ package main_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
+	"github.com/google/uuid"
 	main "github.com/philohsophy/dummy-blockchain-transaction-pool"
 )
 
@@ -23,6 +25,7 @@ func TestMain(m *testing.M) {
 	ensureTableExists()
 	code := m.Run()
 	clearTable()
+	createTransactions(5)
 	os.Exit(code)
 }
 
@@ -58,6 +61,32 @@ func checkResponseCode(t *testing.T, expectedCode, actualCode int) {
 	}
 }
 
+func createTransactions(count int) []uuid.UUID {
+	if count < 1 {
+		count = 1
+	}
+
+	recipientAddress := main.Address{Name: "Foo", Street: "FooStreet", HouseNumber: "1", Town: "FooTown"}
+	recipientAddressJson, _ := json.Marshal(recipientAddress)
+	senderAddress := main.Address{Name: "Bar", Street: "BarStreet", HouseNumber: "1", Town: "BarTown"}
+	senderAddressJson, _ := json.Marshal(senderAddress)
+
+	var transactionIds = make([]uuid.UUID, count)
+	for i := 0; i < count; i++ {
+		transactionIds[i] = uuid.New()
+		_, err := a.DB.Exec(`
+			INSERT INTO transactions
+			VALUES($1, $2, $3, $4)
+			RETURNING id`,
+			transactionIds[i], recipientAddressJson, senderAddressJson, (i+1.0)*10)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	return transactionIds
+}
+
 func TestEmptyTable(t *testing.T) {
 	clearTable()
 
@@ -74,7 +103,7 @@ func TestEmptyTable(t *testing.T) {
 func TestGetNonExistentTransaction(t *testing.T) {
 	clearTable()
 
-	req, _ := http.NewRequest("GET", "/transactions/1337", nil)
+	req, _ := http.NewRequest("GET", "/transactions/"+uuid.New().String(), nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusNotFound, response.Code)
@@ -116,4 +145,13 @@ func TestCreateTransaction(t *testing.T) {
 	log.Println(m)
 
 	// TODO: Define Assertions
+}
+
+func TestGetTransaction(t *testing.T) {
+	clearTable()
+	transactionIds := createTransactions(5)
+
+	for i, s := range transactionIds {
+		fmt.Println(i, s)
+	}
 }

@@ -27,11 +27,11 @@ func (t *Transaction) createTransaction(db *sql.DB) error {
 	recipientAddressJson, _ := json.Marshal(t.RecipientAddress)
 	senderAddressJson, _ := json.Marshal(t.SenderAddress)
 
-	err := db.QueryRow(`
+	_, err := db.Exec(`
 		INSERT INTO transactions
 		VALUES($1, $2, $3, $4)
 		RETURNING id`,
-		t.Id, recipientAddressJson, senderAddressJson, t.Value).Scan(&t.Id)
+		t.Id, recipientAddressJson, senderAddressJson, t.Value)
 
 	if err != nil {
 		return err
