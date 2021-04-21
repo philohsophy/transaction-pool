@@ -30,6 +30,7 @@ func (a *App) Initialize(user, password, dbname string) {
 }
 
 func (a *App) initializeRoutes() {
+	a.Router.HandleFunc("/transactions", a.getTransactions).Methods("GET")
 	a.Router.HandleFunc("/transactions", a.createTransaction).Methods("POST")
 }
 
@@ -64,4 +65,17 @@ func (a *App) createTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJson(w, http.StatusCreated, t)
+}
+
+func (a *App) getTransactions(w http.ResponseWriter, r *http.Request) {
+	count := 1
+
+	transactions, err := getTransactions(a.DB, count)
+	if err != nil {
+		log.Println("Error happened")
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondWithJson(w, http.StatusOK, transactions)
 }
