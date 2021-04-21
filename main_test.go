@@ -25,7 +25,6 @@ func TestMain(m *testing.M) {
 	ensureTableExists()
 	code := m.Run()
 	clearTable()
-	createTransactions(5)
 	os.Exit(code)
 }
 
@@ -33,11 +32,6 @@ func ensureTableExists() {
 	if _, err := a.DB.Exec(tableCreationQuery); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func clearTable() {
-	a.DB.Exec("DELETE FROM transactions")
-	a.DB.Exec("ALTER SEQUENCE transactions_id_seq RESTART WITH 1")
 }
 
 const tableCreationQuery = `CREATE TABLE IF NOT EXISTS transactions
@@ -48,17 +42,8 @@ const tableCreationQuery = `CREATE TABLE IF NOT EXISTS transactions
 	value NUMERIC(10,2) NOT NULL DEFAULT 0.00
 )`
 
-func executeRequest(req *http.Request) *httptest.ResponseRecorder {
-	rr := httptest.NewRecorder()
-	a.Router.ServeHTTP(rr, req)
-
-	return rr
-}
-
-func checkResponseCode(t *testing.T, expectedCode, actualCode int) {
-	if expectedCode != actualCode {
-		t.Errorf("Expected response code %d. Got %d\n", expectedCode, actualCode)
-	}
+func clearTable() {
+	a.DB.Exec("DELETE FROM transactions *")
 }
 
 func createTransactions(count int) []uuid.UUID {
@@ -87,6 +72,19 @@ func createTransactions(count int) []uuid.UUID {
 	return transactionIds
 }
 
+func executeRequest(req *http.Request) *httptest.ResponseRecorder {
+	rr := httptest.NewRecorder()
+	a.Router.ServeHTTP(rr, req)
+
+	return rr
+}
+
+func checkResponseCode(t *testing.T, expectedCode, actualCode int) {
+	if expectedCode != actualCode {
+		t.Errorf("Expected response code %d. Got %d\n", expectedCode, actualCode)
+	}
+}
+
 func TestEmptyTable(t *testing.T) {
 	clearTable()
 
@@ -95,7 +93,7 @@ func TestEmptyTable(t *testing.T) {
 
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	if body := response.Body.String(); body != "[]" {
+	if body := response.Body.String(); body != "{transactions:[]}" {
 		t.Errorf("Expected an empty array of transactions. Got %s", body)
 	}
 }
