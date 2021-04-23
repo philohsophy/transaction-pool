@@ -93,7 +93,7 @@ func TestEmptyTable(t *testing.T) {
 
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	if body := response.Body.String(); body != "{transactions:[]}" {
+	if body := response.Body.String(); body != `{"transactions":[]}` {
 		t.Errorf("Expected an empty array of transactions. Got %s", body)
 	}
 }

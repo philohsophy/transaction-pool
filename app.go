@@ -71,11 +71,16 @@ func (a *App) getTransactions(w http.ResponseWriter, r *http.Request) {
 	count := 1
 
 	transactions, err := getTransactions(a.DB, count)
+
 	if err != nil {
-		log.Println("Error happened")
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondWithJson(w, http.StatusOK, transactions)
+	payload := struct {
+		Transactions []Transaction `json:"transactions"`
+	}{
+		Transactions: transactions,
+	}
+	respondWithJson(w, http.StatusOK, payload)
 }
