@@ -61,7 +61,10 @@ func (t *Transaction) createTransaction(db *sql.DB) error {
 }
 
 func (t *Transaction) getTransaction(db *sql.DB) error {
-	return errors.New("Not implemented")
+	return db.QueryRow(`
+		SELECT * FROM transactions
+		WHERE id=$1`,
+		t.Id).Scan(&t.Id, &t.RecipientAddress, &t.SenderAddress, &t.Value)
 }
 
 func (t *Transaction) deleteTransaction(db *sql.DB) error {

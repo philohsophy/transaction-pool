@@ -98,21 +98,6 @@ func TestEmptyTable(t *testing.T) {
 	}
 }
 
-func TestGetNonExistentTransaction(t *testing.T) {
-	clearTable()
-
-	req, _ := http.NewRequest("GET", "/transactions/"+uuid.New().String(), nil)
-	response := executeRequest(req)
-
-	checkResponseCode(t, http.StatusNotFound, response.Code)
-	var m map[string]string
-	json.Unmarshal(response.Body.Bytes(), &m)
-	expectedErrorMsg := "Transaction not found"
-	if m["error"] != expectedErrorMsg {
-		t.Errorf("Expected the 'error' key of the response to be set to '%s'. Got '%s'", expectedErrorMsg, m["error"])
-	}
-}
-
 func TestCreateTransaction(t *testing.T) {
 	clearTable()
 
@@ -145,11 +130,32 @@ func TestCreateTransaction(t *testing.T) {
 	// TODO: Define Assertions
 }
 
+func TestGetNonExistentTransaction(t *testing.T) {
+	clearTable()
+
+	req, _ := http.NewRequest("GET", "/transactions/"+uuid.New().String(), nil)
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusNotFound, response.Code)
+	var m map[string]string
+	json.Unmarshal(response.Body.Bytes(), &m)
+	expectedErrorMsg := "Transaction not found"
+	if m["error"] != expectedErrorMsg {
+		t.Errorf("Expected the 'error' key of the response to be set to '%s'. Got '%s'", expectedErrorMsg, m["error"])
+	}
+}
+
 func TestGetTransaction(t *testing.T) {
 	clearTable()
-	transactionIds := createTransactions(5)
+	transactionIds := createTransactions(2)
 
-	for i, s := range transactionIds {
-		fmt.Println(i, s)
+	for i, transactionId := range transactionIds {
+		fmt.Println(i, transactionId)
+		req, _ := http.NewRequest("GET", "/transactions/"+transactionId.String(), nil)
+		response := executeRequest(req)
+
+		checkResponseCode(t, http.StatusOK, response.Code)
+
+		fmt.Println("Response:", response.Body)
 	}
 }
