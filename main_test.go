@@ -3,7 +3,6 @@ package main_test
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -149,13 +148,9 @@ func TestGetTransaction(t *testing.T) {
 	clearTable()
 	transactionIds := createTransactions(2)
 
-	for i, transactionId := range transactionIds {
-		fmt.Println(i, transactionId)
+	for _, transactionId := range transactionIds {
 		req, _ := http.NewRequest("GET", "/transactions/"+transactionId.String(), nil)
 		response := executeRequest(req)
-
 		checkResponseCode(t, http.StatusOK, response.Code)
-
-		fmt.Println("Response:", response.Body)
 	}
 }
