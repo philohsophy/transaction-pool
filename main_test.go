@@ -3,6 +3,7 @@ package main_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -101,7 +102,8 @@ func TestEmptyTable(t *testing.T) {
 func TestCreateTransaction(t *testing.T) {
 	clearTable()
 
-	transactionJson := []byte(`
+	t.Run("valid transaction", func(t *testing.T) {
+		transactionJson := []byte(`
 		{
 			"recipientAddress":{
 				"name": "Alan",
@@ -117,38 +119,125 @@ func TestCreateTransaction(t *testing.T) {
 			},
 			"value": 100.21
 		}`)
-	req, _ := http.NewRequest("POST", "/transactions", bytes.NewBuffer(transactionJson))
-	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+		req, _ := http.NewRequest("POST", "/transactions", bytes.NewBuffer(transactionJson))
+		req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
-	response := executeRequest(req)
-	checkResponseCode(t, http.StatusCreated, response.Code)
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusCreated, response.Code)
 
-	var mReq map[string]interface{}
-	json.Unmarshal(transactionJson, &mReq)
+		var mReq map[string]interface{}
+		json.Unmarshal(transactionJson, &mReq)
 
-	var mRes map[string]interface{}
-	json.Unmarshal(response.Body.Bytes(), &mRes)
+		var mRes map[string]interface{}
+		json.Unmarshal(response.Body.Bytes(), &mRes)
 
-	if !reflect.DeepEqual(mRes["recipientAddress"], mReq["recipientAddress"]) {
-		t.Errorf("Expected recipientAddresss to be '%v'. Got '%v'", mReq["recipientAddress"], mRes["recipientAddress"])
-	}
+		if !reflect.DeepEqual(mRes["recipientAddress"], mReq["recipientAddress"]) {
+			t.Errorf("Expected recipientAddresss to be '%v'. Got '%v'", mReq["recipientAddress"], mRes["recipientAddress"])
+		}
 
-	if !reflect.DeepEqual(mRes["senderAddress"], mReq["senderAddress"]) {
-		t.Errorf("Expected senderAddress to be '%v'. Got '%v'", mReq["senderAddress"], mRes["senderAddress"])
-	}
+		if !reflect.DeepEqual(mRes["senderAddress"], mReq["senderAddress"]) {
+			t.Errorf("Expected senderAddress to be '%v'. Got '%v'", mReq["senderAddress"], mRes["senderAddress"])
+		}
 
-	if !reflect.DeepEqual(mRes["value"], mReq["value"]) {
-		t.Errorf("Expected value to be '%v'. Got '%v'", mReq["value"], mRes["value"])
-	}
+		if !reflect.DeepEqual(mRes["value"], mReq["value"]) {
+			t.Errorf("Expected value to be '%v'. Got '%v'", mReq["value"], mRes["value"])
+		}
 
-	id, ok := mRes["id"].(string)
-	if !ok {
-		t.Errorf("Expected id to be a 'string'. Got '%T'", mRes["id"])
-	}
-	_, err := uuid.Parse(id)
-	if err != nil {
-		t.Errorf("Expected id to be an 'UUID'")
-	}
+		id, ok := mRes["id"].(string)
+		if !ok {
+			t.Errorf("Expected id to be a 'string'. Got '%T'", mRes["id"])
+		}
+		_, err := uuid.Parse(id)
+		if err != nil {
+			t.Errorf("Expected id to be an 'UUID'")
+		}
+	})
+
+	t.Run("invalid transaction", func(t *testing.T) {
+		var invalidTransactions = make(map[string][]byte)
+		invalidTransactions["recipientAddress"] = []byte(`
+			{
+				"senderAddress": {
+					"name": "Bob",
+					"street": "Hauptstrasse",
+					"houseNumber": "1",
+					"town": "Berlin"
+				},
+				"value": 100.21
+			}`)
+		invalidTransactions["senderAddress"] = []byte(`
+			{
+				"recipientAddress":{
+					"name": "Alan",
+					"street": "Baker Street",
+					"houseNumber": "221B",
+					"town": "London"
+				},
+				"value": 100.21
+			}`)
+		invalidTransactions["value"] = []byte(`
+			{
+				"recipientAddress":{
+					"name": "Alan",
+					"street": "Baker Street",
+					"houseNumber": "221B",
+					"town": "London"
+				},
+				"senderAddress": {
+					"name": "Bob",
+					"street": "Hauptstrasse",
+					"houseNumber": "1",
+					"town": "Berlin"
+				}
+			}`)
+
+		for missingElement, invalidTransaction := range invalidTransactions {
+			req, _ := http.NewRequest("POST", "/transactions", bytes.NewBuffer(invalidTransaction))
+			req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+
+			response := executeRequest(req)
+			checkResponseCode(t, http.StatusBadRequest, response.Code)
+
+			var m map[string]string
+			json.Unmarshal(response.Body.Bytes(), &m)
+			expectedErrorMsg := fmt.Sprintf("Invalid transaction: missing '%s'", missingElement)
+			if m["error"] != expectedErrorMsg {
+				t.Errorf("Expected the 'error' key of the response to be set to '%s'. Got '%s'", expectedErrorMsg, m["error"])
+			}
+		}
+	})
+
+	t.Run("invalid json", func(t *testing.T) {
+		// missing ',' between recipientAddress and senderAddress --> invalid JSON
+		malformedJson := []byte(`
+		{
+			"recipientAddress":{
+				"name": "Alan",
+				"street": "Baker Street",
+				"houseNumber": "221B",
+				"town": "London"
+			}
+			"senderAddress": {
+				"name": "Bob",
+				"street": "Hauptstrasse",
+				"houseNumber": "1",
+				"town": "Berlin"
+			},
+			"value": 100.21
+		}`)
+		req, _ := http.NewRequest("POST", "/transactions", bytes.NewBuffer(malformedJson))
+		req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusBadRequest, response.Code)
+
+		var m map[string]string
+		json.Unmarshal(response.Body.Bytes(), &m)
+		expectedErrorMsg := "Invalid JSON"
+		if m["error"] != expectedErrorMsg {
+			t.Errorf("Expected the 'error' key of the response to be set to '%s'. Got '%s'", expectedErrorMsg, m["error"])
+		}
+	})
+
 }
 
 func TestGetNonExistentTransaction(t *testing.T) {

@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"reflect"
 
 	"github.com/google/uuid"
 )
@@ -42,10 +43,30 @@ type Transaction struct {
 	Value            float32   `json:"value"`
 }
 
+//var InvalidTransactionError = errors.New("Invalid transaction")
+
+type InvalidTransactionError struct {
+	err string
+}
+
+func (e *InvalidTransactionError) Error() string {
+	return e.err
+}
+
 func (t *Transaction) createTransaction(db *sql.DB) error {
 	t.Id = uuid.New()
 	recipientAddressJson, _ := json.Marshal(t.RecipientAddress)
 	senderAddressJson, _ := json.Marshal(t.SenderAddress)
+
+	if reflect.ValueOf(t.RecipientAddress).IsZero() {
+		return &InvalidTransactionError{err: "Invalid transaction: missing 'recipientAddress'"}
+	}
+	if reflect.ValueOf(t.SenderAddress).IsZero() {
+		return &InvalidTransactionError{err: "Invalid transaction: missing 'senderAddress'"}
+	}
+	if reflect.ValueOf(t.Value).IsZero() {
+		return &InvalidTransactionError{err: "Invalid transaction: missing 'value'"}
+	}
 
 	_, err := db.Exec(`
 		INSERT INTO transactions

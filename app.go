@@ -80,13 +80,18 @@ func (a *App) createTransaction(w http.ResponseWriter, r *http.Request) {
 	var t Transaction
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&t); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid transaction")
+		respondWithError(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 	defer r.Body.Close()
 
 	if err := t.createTransaction(a.DB); err != nil {
-		respondWithError(w, http.StatusInternalServerError, err.Error())
+		switch err {
+		case err.(*InvalidTransactionError):
+			respondWithError(w, http.StatusBadRequest, err.Error())
+		default:
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 
