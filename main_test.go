@@ -47,7 +47,7 @@ func clearTable() {
 	a.DB.Exec("DELETE FROM transactions *")
 }
 
-func createTransactions(count int) []uuid.UUID {
+func createTransactions(count int) []main.Transaction {
 	if count < 1 {
 		count = 1
 	}
@@ -57,20 +57,26 @@ func createTransactions(count int) []uuid.UUID {
 	senderAddress := main.Address{Name: "Bar", Street: "BarStreet", HouseNumber: "1", Town: "BarTown"}
 	senderAddressJson, _ := json.Marshal(senderAddress)
 
-	var transactionIds = make([]uuid.UUID, count)
+	var transactions = make([]main.Transaction, count)
 	for i := 0; i < count; i++ {
-		transactionIds[i] = uuid.New()
+		var t main.Transaction
+		t.Id = uuid.New()
+		t.RecipientAddress = recipientAddress
+		t.SenderAddress = senderAddress
+		t.Value = float32((i + 1.0) * 10)
+		transactions[i] = t
+
 		_, err := a.DB.Exec(`
 			INSERT INTO transactions
 			VALUES($1, $2, $3, $4)
 			RETURNING id`,
-			transactionIds[i], recipientAddressJson, senderAddressJson, (i+1.0)*10)
+			t.Id, recipientAddressJson, senderAddressJson, t.Value)
 
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-	return transactionIds
+	return transactions
 }
 
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
@@ -85,6 +91,10 @@ func checkResponseCode(t *testing.T, expectedCode, actualCode int) {
 		t.Errorf("Expected response code %d. Got %d\n", expectedCode, actualCode)
 	}
 }
+
+/*
+func checkResponseBody(t *testing.T, expectedBody, actualBody interface{}) {}
+*/
 
 func TestEmptyTable(t *testing.T) {
 	clearTable()
@@ -237,31 +247,62 @@ func TestCreateTransaction(t *testing.T) {
 			t.Errorf("Expected the 'error' key of the response to be set to '%s'. Got '%s'", expectedErrorMsg, m["error"])
 		}
 	})
-
-}
-
-func TestGetNonExistentTransaction(t *testing.T) {
-	clearTable()
-
-	req, _ := http.NewRequest("GET", "/transactions/"+uuid.New().String(), nil)
-	response := executeRequest(req)
-
-	checkResponseCode(t, http.StatusNotFound, response.Code)
-	var m map[string]string
-	json.Unmarshal(response.Body.Bytes(), &m)
-	expectedErrorMsg := "Transaction not found"
-	if m["error"] != expectedErrorMsg {
-		t.Errorf("Expected the 'error' key of the response to be set to '%s'. Got '%s'", expectedErrorMsg, m["error"])
-	}
 }
 
 func TestGetTransaction(t *testing.T) {
 	clearTable()
-	transactionIds := createTransactions(2)
 
-	for _, transactionId := range transactionIds {
-		req, _ := http.NewRequest("GET", "/transactions/"+transactionId.String(), nil)
+	t.Run("transaction exists (200)", func(t *testing.T) {
+		transactions := createTransactions(2)
+
+		for _, transaction := range transactions {
+			req, _ := http.NewRequest("GET", "/transactions/"+transaction.Id.String(), nil)
+			response := executeRequest(req)
+			checkResponseCode(t, http.StatusOK, response.Code)
+
+			transactionJson, _ := json.Marshal(transaction)
+			if string(transactionJson) != response.Body.String() {
+				t.Errorf("Received transaction does not match!\n\tExpected: '%v'\n\tReceived: '%v'", string(transactionJson), response.Body)
+			}
+		}
+	})
+
+	t.Run("transaction does not exist (404)", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/transactions/"+uuid.New().String(), nil)
+		response := executeRequest(req)
+
+		checkResponseCode(t, http.StatusNotFound, response.Code)
+		var m map[string]string
+		json.Unmarshal(response.Body.Bytes(), &m)
+		expectedErrorMsg := "Transaction not found"
+		if m["error"] != expectedErrorMsg {
+			t.Errorf("Expected the 'error' key of the response to be set to '%s'. Got '%s'", expectedErrorMsg, m["error"])
+		}
+	})
+}
+
+func TestDeleteTransaction(t *testing.T) {
+	clearTable()
+
+	t.Run("transaction exists (200)", func(t *testing.T) {
+		transactions := createTransactions(1)
+		transaction := transactions[0]
+
+		req, _ := http.NewRequest("DELETE", "/transactions/"+transaction.Id.String(), nil)
 		response := executeRequest(req)
 		checkResponseCode(t, http.StatusOK, response.Code)
-	}
+
+		transactionJson, _ := json.Marshal(transaction)
+		if string(transactionJson) != response.Body.String() {
+			t.Errorf("Received transaction does not match!\n\tExpected: '%v'\n\tReceived: '%v'", string(transactionJson), response.Body)
+		}
+	})
+
+	t.Run("transaction does not exist (404)", func(t *testing.T) {
+		transactionId := uuid.New().String()
+
+		req, _ := http.NewRequest("DELETE", "/transactions/"+transactionId, nil)
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusNotFound, response.Code)
+	})
 }
