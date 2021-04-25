@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/google/uuid"
@@ -122,11 +123,32 @@ func TestCreateTransaction(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusCreated, response.Code)
 
-	var m map[string]interface{}
-	json.Unmarshal(response.Body.Bytes(), &m)
-	log.Println(m)
+	var mReq map[string]interface{}
+	json.Unmarshal(transactionJson, &mReq)
 
-	// TODO: Define Assertions
+	var mRes map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &mRes)
+
+	if !reflect.DeepEqual(mRes["recipientAddress"], mReq["recipientAddress"]) {
+		t.Errorf("Expected recipientAddresss to be '%v'. Got '%v'", mReq["recipientAddress"], mRes["recipientAddress"])
+	}
+
+	if !reflect.DeepEqual(mRes["senderAddress"], mReq["senderAddress"]) {
+		t.Errorf("Expected senderAddress to be '%v'. Got '%v'", mReq["senderAddress"], mRes["senderAddress"])
+	}
+
+	if !reflect.DeepEqual(mRes["value"], mReq["value"]) {
+		t.Errorf("Expected value to be '%v'. Got '%v'", mReq["value"], mRes["value"])
+	}
+
+	id, ok := mRes["id"].(string)
+	if !ok {
+		t.Errorf("Expected id to be a 'string'. Got '%T'", mRes["id"])
+	}
+	_, err := uuid.Parse(id)
+	if err != nil {
+		t.Errorf("Expected id to be an 'UUID'")
+	}
 }
 
 func TestGetNonExistentTransaction(t *testing.T) {
