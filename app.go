@@ -34,6 +34,7 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/transactions", a.getTransactions).Methods("GET")
 	a.Router.HandleFunc("/transactions", a.createTransaction).Methods("POST")
 	a.Router.HandleFunc("/transactions/{id:[a-z0-9-]+}", a.getTransaction).Methods("GET")
+	a.Router.HandleFunc("/transactions/{id:[a-z0-9-]+}", a.deleteTransaction).Methods("DELETE")
 }
 
 func (a *App) Run(addr string) {
@@ -96,6 +97,30 @@ func (a *App) createTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJson(w, http.StatusCreated, t)
+}
+
+func (a *App) deleteTransaction(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	id, err := uuid.Parse(vars["id"])
+	if err != nil {
+		fmt.Println("Error: ", err.Error())
+		respondWithError(w, http.StatusBadRequest, "Invalid transaction ID")
+		return
+	}
+
+	t := Transaction{Id: id}
+	if err := t.deleteTransaction(a.DB); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			respondWithError(w, http.StatusNotFound, "Transaction not found")
+		default:
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	respondWithJson(w, http.StatusOK, t)
 }
 
 func (a *App) getTransactions(w http.ResponseWriter, r *http.Request) {

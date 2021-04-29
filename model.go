@@ -43,8 +43,6 @@ type Transaction struct {
 	Value            float32   `json:"value"`
 }
 
-//var InvalidTransactionError = errors.New("Invalid transaction")
-
 type InvalidTransactionError struct {
 	err string
 }
@@ -89,7 +87,12 @@ func (t *Transaction) getTransaction(db *sql.DB) error {
 }
 
 func (t *Transaction) deleteTransaction(db *sql.DB) error {
-	return errors.New("Not implemented")
+	// Ref: https://www.calhoun.io/updating-and-deleting-postgresql-records-using-gos-sql-package/
+	return db.QueryRow(`
+		DELETE FROM transactions
+		WHERE id=$1
+		RETURNING id, recipient_address, sender_address, value`,
+		t.Id).Scan(&t.Id, &t.RecipientAddress, &t.SenderAddress, &t.Value)
 }
 
 func getTransactions(db *sql.DB, count int) ([]Transaction, error) {

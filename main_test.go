@@ -304,5 +304,12 @@ func TestDeleteTransaction(t *testing.T) {
 		req, _ := http.NewRequest("DELETE", "/transactions/"+transactionId, nil)
 		response := executeRequest(req)
 		checkResponseCode(t, http.StatusNotFound, response.Code)
+
+		var m map[string]string
+		json.Unmarshal(response.Body.Bytes(), &m)
+		expectedErrorMsg := "Transaction not found"
+		if m["error"] != expectedErrorMsg {
+			t.Errorf("Expected the 'error' key of the response to be set to '%s'. Got '%s'", expectedErrorMsg, m["error"])
+		}
 	})
 }
