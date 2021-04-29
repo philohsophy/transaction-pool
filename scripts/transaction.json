@@ -1,0 +1,15 @@
+{
+    "recipientAddress":{
+        "name": "Alan",
+        "street": "Baker Street",
+        "houseNumber": "221B",
+        "town": "London"
+    },
+    "senderAddress": {
+        "name": "Bob",
+        "street": "Hauptstrasse",
+        "houseNumber": "1",
+        "town": "Berlin"
+    },
+    "value": 100.21
+}
