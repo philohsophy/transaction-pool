@@ -19,9 +19,9 @@ var a main.App
 
 func TestMain(m *testing.M) {
 	a.Initialize(
-		os.Getenv("APP_DB_USERNAME"),
-		os.Getenv("APP_DB_PASSWORD"),
-		os.Getenv("APP_DB_NAME"))
+		os.Getenv("TRANSACTION_POOL_DB_USERNAME"),
+		os.Getenv("TRANSACTION_POOL_DB_PASSWORD"),
+		os.Getenv("TRANSACTION_POOL_DB_NAME"))
 
 	ensureTableExists()
 	code := m.Run()

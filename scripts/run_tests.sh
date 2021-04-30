@@ -1,5 +1,5 @@
-export APP_DB_USERNAME=postgres
-export APP_DB_PASSWORD=postgres
-export APP_DB_NAME=postgres
+export TRANSACTION_POOL_DB_USERNAME=postgres
+export TRANSACTION_POOL_DB_PASSWORD=postgres
+export TRANSACTION_POOL_DB_NAME=postgres
 
 go test -v
