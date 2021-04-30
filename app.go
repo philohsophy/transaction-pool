@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -17,8 +18,9 @@ type App struct {
 	DB     *sql.DB
 }
 
-func (a *App) Initialize(user, password, dbname string) {
-	connectionString := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", user, password, dbname)
+func (a *App) Initialize(host, port, user, password, dbname string) {
+	portInt, _ := strconv.Atoi(port)
+	connectionString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, portInt, user, password, dbname)
 	a.connectToDatabase(connectionString)
 	a.initializeDatabase()
 
@@ -151,6 +153,7 @@ func (a *App) deleteTransaction(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) getTransactions(w http.ResponseWriter, r *http.Request) {
+	// TODO: Extract count from request querySstringParameters
 	count := 1
 
 	transactions, err := getTransactions(a.DB, count)

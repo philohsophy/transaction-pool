@@ -96,6 +96,7 @@ func (t *Transaction) deleteTransaction(db *sql.DB) error {
 }
 
 func getTransactions(db *sql.DB, count int) ([]Transaction, error) {
+	// TODO: check if count is nil
 	rows, err := db.Query(`
 		SELECT * FROM transactions
 		LIMIT $1`,
