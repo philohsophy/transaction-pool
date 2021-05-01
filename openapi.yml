@@ -2,19 +2,71 @@ openapi: 3.0.3
 
 info:
   title: Transaction Pool
-  version: 0.0.1
+  version: 0.1.0
   description: Backend Service - Pool for Transactions
   contact:
     name: GIT
-    url: https://github.com/philohsophy/dummy-blockchain-transaction-pool
+    url: https://github.com/philohsophy/transaction-pool
 
 tags:
-  -  name: Transactions
+  - name: Transactions
 
 paths:
   /transactions:
     get:
-      summary: Get all transactions
+      summary: Get transactions
+      operationId: GetTransactions
+      tags:
+        - Transactions
+      parameters:
+        - in: query
+          name: amount
+          required: false
+          description: "Amount of transactions that should be returned"
+          schema:
+            type: integer
+            minimum: 0
+            default: 3
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transactions'
+    
+    post:
+      summary: Create new transaction
+      operationId: CreateTransaction
+      tags:
+        - Transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+      responses:
+        201:
+          description: created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        400:
+          $ref: '#/components/responses/400BadRequest'
+
+  /transactions/{transactionId}:
+    parameters:
+      - in: path
+        name: transactionId
+        required: true
+        description: "UUID of transaction"
+        schema:
+          $ref: '#/components/schemas/TransactionId'
+          
+    get:
+      summary: Get specific transaction
+      operationId: GetTransactionById
       tags:
         - Transactions
       responses:
@@ -23,10 +75,62 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Transactions'
+                $ref: '#/components/schemas/Transaction'
+        404:
+          $ref: '#/components/responses/404NotFound'
+    
+    delete:
+      summary: Delete specific transaction
+      operationId: DeleteTransactionById
+      tags:
+        - Transactions
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        400:
+          $ref: '#/components/responses/400BadRequest'
+        404:
+          $ref: '#/components/responses/404NotFound'
+    
 
 components:
+  responses:
+    400BadRequest:
+      description: bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            InvalidTransaction:
+              value:
+                error: "Invalid transaction: missing 'senderAddress'"
+            InvalidTransactionId:
+              value:
+                error: "Invalid transaction ID"
+        
+    404NotFound:
+      description: not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example: 
+            error: "Transaction not found"
+  
   schemas:
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+
     Address:
       type: object
       required:
@@ -44,16 +148,17 @@ components:
         town:
           type: string
         
-    Transaction:
+    TransactionId:
+      type: string
+      format: uuid
+      example: "4547f24a-7927-467f-94d8-d66c58e3b006"
+    TransactionRequest:
       type: object
       required:
         - senderAddress
         - recipientAddress
         - value
       properties:
-        id:
-          type: integer
-          minimum: 0
         senderAddress:
           $ref: '#/components/schemas/Address'
         recipientAddress:
@@ -62,9 +167,34 @@ components:
           type: number
           format: float
           minimum: 0.01
+          example: 100.55
+      example:
+        senderAddress:
+          name: "Alan"
+          street: "Baker Street"
+          houseNumber: "221B"
+          town: "London"
+        recipientAddress:
+          name: "Bob"
+          street: "Hauptstrasse"
+          houseNumber: "1"
+          town: "Berlin"
+        value: 100.55
+    
+    Transaction:
+      description: A transaction
+      allOf:
+        - properties:
+            id:
+              $ref: '#/components/schemas/TransactionId'
+          example:
+            id: "4547f24a-7927-467f-94d8-d66c58e3b006"
+        - $ref: '#/components/schemas/TransactionRequest'
+   
     Transactions:
-      type: array
-      items:
-        $ref: '#/components/schemas/Transaction'
-
-
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
