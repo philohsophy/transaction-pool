@@ -14,3 +14,5 @@ Transaction Pool for Dummy-Blockchain project
 # 3. i.e. create new transaction
 ./scripts/create_transaction.sh
 ```
+
+Or import & use Postman Collection located in ```./doc/postman/```
