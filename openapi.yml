@@ -3,7 +3,7 @@ openapi: 3.0.3
 info:
   title: Transaction Pool
   version: 0.1.0
-  description: Backend Service - Pool for Transactions
+  description: Dummy Blockchain Backend Service - Pool for Transactions
   contact:
     name: GIT
     url: https://github.com/philohsophy/transaction-pool
