@@ -1,6 +1,13 @@
-# dummy-blockchain-transaction-pool
+# transaction-pool
 
-Transaction Pool for Dummy-Blockchain project
+Part of [Dummy-Blockchain project](https://github.com/users/philohsophy/projects/1)
+
+## Outline
+
+Backend Service written in GO which:
+
+- provides a HTTP/REST-Interface for managing transactions
+- uses a PostgreSQL database for persisting the transactions
 
 ## How to run
 
