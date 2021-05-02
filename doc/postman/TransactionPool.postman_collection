@@ -1,0 +1,111 @@
+{
+	"info": {
+		"_postman_id": "e53e03dc-cf75-47c4-bf19-41dd8c8599c8",
+		"name": "Transaction Pool",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get Transactions",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{HOST}}:{{PORT}}/transactions?amount=2",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"transactions"
+					],
+					"query": [
+						{
+							"key": "amount",
+							"value": "2"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Transaction",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();\r",
+							"var transactionId = jsonData.id;\r",
+							"pm.globals.set(\"TRANSACTION_ID\", transactionId);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"recipientAddress\":{\r\n        \"name\": \"Alan\",\r\n        \"street\": \"Baker Street\",\r\n        \"houseNumber\": \"221B\",\r\n        \"town\": \"London\"\r\n    },\r\n    \"senderAddress\": {\r\n        \"name\": \"Bob\",\r\n        \"street\": \"Hauptstrasse\",\r\n        \"houseNumber\": \"1\",\r\n        \"town\": \"Berlin\"\r\n    },\r\n    \"value\": 100.22\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{HOST}}:{{PORT}}/transactions",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"transactions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Transaction by Id",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{HOST}}:{{PORT}}/transactions/{{TRANSACTION_ID}}",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"transactions",
+						"{{TRANSACTION_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Transaction",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{HOST}}:{{PORT}}/transactions/{{TRANSACTION_ID}}",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"transactions",
+						"{{TRANSACTION_ID}}"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
