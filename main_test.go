@@ -111,6 +111,64 @@ func TestEmptyTable(t *testing.T) {
 	}
 }
 
+func TestGetTransactions(t *testing.T) {
+	clearTable()
+	createTransactions(5)
+
+	t.Run("If no amount is given via queryString params", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/transactions", nil)
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusOK, response.Code)
+
+		var m map[string]interface{}
+		json.Unmarshal(response.Body.Bytes(), &m)
+		// Ref: https://stackoverflow.com/a/21070860
+		transactions := m["transactions"].([]interface{})
+
+		expectedAmount := 3
+		receivedAmount := len(transactions)
+
+		if receivedAmount != expectedAmount {
+			t.Errorf("Expected %v transactions to be returned. Got %v", expectedAmount, receivedAmount)
+		}
+	})
+
+	t.Run("If amount is given via queryString params", func(t *testing.T) {
+		n := 4
+		req, _ := http.NewRequest("GET", fmt.Sprintf("/transactions?amount=%d", n), nil)
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusOK, response.Code)
+
+		var m map[string]interface{}
+		json.Unmarshal(response.Body.Bytes(), &m)
+		transactions := m["transactions"].([]interface{})
+
+		expectedAmount := n
+		receivedAmount := len(transactions)
+
+		if receivedAmount != expectedAmount {
+			t.Errorf("Expected %v transactions to be returned. Got %v", expectedAmount, receivedAmount)
+		}
+	})
+
+	t.Run("If invalid amount is given via queryString params", func(t *testing.T) {
+		invalidAmounts := [5]string{"-1", "0", "", "one", "1xx"}
+
+		for _, invalidAmount := range invalidAmounts {
+			req, _ := http.NewRequest("GET", fmt.Sprintf("/transactions?amount=%s", invalidAmount), nil)
+			response := executeRequest(req)
+
+			checkResponseCode(t, http.StatusBadRequest, response.Code)
+			var m map[string]string
+			json.Unmarshal(response.Body.Bytes(), &m)
+			expectedErrorMsg := fmt.Sprintf("Invalid amount '%s'", invalidAmount)
+			if m["error"] != expectedErrorMsg {
+				t.Errorf("Expected the 'error' key of the response to be set to '%s'. Got '%s'", expectedErrorMsg, m["error"])
+			}
+		}
+	})
+}
+
 func TestCreateTransaction(t *testing.T) {
 	clearTable()
 
