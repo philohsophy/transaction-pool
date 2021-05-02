@@ -1,4 +1,4 @@
-module github.com/philohsophy/dummy-blockchain-transaction-pool
+module github.com/philohsophy/transaction-pool
 
 go 1.16
 
