@@ -5,4 +5,5 @@ export TRANSACTION_POOL_DB_USERNAME=postgres
 export TRANSACTION_POOL_DB_PASSWORD=postgres
 export TRANSACTION_POOL_DB_NAME=postgres
 
-go test -v
+# i.e. ./scripts/run_test.sh -run Create
+go test -v $1 $2

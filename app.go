@@ -153,11 +153,20 @@ func (a *App) deleteTransaction(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) getTransactions(w http.ResponseWriter, r *http.Request) {
-	// TODO: Extract count from request querySstringParameters
-	count := 1
+	var amount int = 3 // Default
 
-	transactions, err := getTransactions(a.DB, count)
+	query := r.URL.Query()
+	amountQueryString, present := query["amount"]
+	if present && len(amountQueryString) > 0 {
+		amountRequested, err := strconv.Atoi(amountQueryString[0])
+		if err != nil || amountRequested <= 0 {
+			respondWithError(w, http.StatusBadRequest, fmt.Sprintf("Invalid amount '%s'", amountQueryString[0]))
+			return
+		}
+		amount = amountRequested
+	}
 
+	transactions, err := getTransactions(a.DB, amount)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
