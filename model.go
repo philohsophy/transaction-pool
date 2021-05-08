@@ -2,46 +2,12 @@ package main
 
 import (
 	"database/sql"
-	"database/sql/driver"
 	"encoding/json"
-	"errors"
 	"reflect"
 
 	"github.com/google/uuid"
+	models "github.com/philohsophy/dummy-blockchain-models"
 )
-
-type Address struct {
-	Name        string `json:"name"`
-	Street      string `json:"street"`
-	HouseNumber string `json:"houseNumber"`
-	Town        string `json:"town"`
-}
-
-// Make the Address struct implement the driver.Valuer interface. This method
-// simply returns the JSON-encoded representation of the struct.
-// Ref: https://www.alexedwards.net/blog/using-postgresql-jsonb
-func (a Address) Value() (driver.Value, error) {
-	return json.Marshal(a)
-}
-
-// Make the Address struct implement the sql.Scanner interface. This method
-// simply decodes a JSON-encoded value into the struct fields.
-// Ref: https://www.alexedwards.net/blog/using-postgresql-jsonb
-func (a *Address) Scan(value interface{}) error {
-	b, ok := value.([]byte)
-	if !ok {
-		return errors.New("type assertion to []byte failed")
-	}
-
-	return json.Unmarshal(b, &a)
-}
-
-type Transaction struct {
-	Id               uuid.UUID `json:"id"`
-	RecipientAddress Address   `json:"recipientAddress"`
-	SenderAddress    Address   `json:"senderAddress"`
-	Value            float32   `json:"value"`
-}
 
 type InvalidTransactionError struct {
 	err string
@@ -51,7 +17,12 @@ func (e *InvalidTransactionError) Error() string {
 	return e.err
 }
 
+type Transaction struct {
+	*models.Transaction
+}
+
 func (t *Transaction) createTransaction(db *sql.DB) error {
+	//t{&models.Transaction{Id: uuid.New()}}
 	t.Id = uuid.New()
 	recipientAddressJson, _ := json.Marshal(t.RecipientAddress)
 	senderAddressJson, _ := json.Marshal(t.SenderAddress)
@@ -95,7 +66,7 @@ func (t *Transaction) deleteTransaction(db *sql.DB) error {
 		t.Id).Scan(&t.Id, &t.RecipientAddress, &t.SenderAddress, &t.Value)
 }
 
-func getTransactions(db *sql.DB, count int) ([]Transaction, error) {
+func getTransactions(db *sql.DB, count int) ([]models.Transaction, error) {
 	// TODO: check if count is nil
 	rows, err := db.Query(`
 		SELECT * FROM transactions
@@ -108,10 +79,10 @@ func getTransactions(db *sql.DB, count int) ([]Transaction, error) {
 
 	defer rows.Close()
 
-	transactions := []Transaction{}
+	transactions := []models.Transaction{}
 
 	for rows.Next() {
-		var t Transaction
+		var t models.Transaction
 		if err := rows.Scan(&t.Id, &t.RecipientAddress, &t.SenderAddress, &t.Value); err != nil {
 			return nil, err
 		}

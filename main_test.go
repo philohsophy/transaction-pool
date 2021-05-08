@@ -12,7 +12,8 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	main "github.com/philohsophy/dummy-blockchain-transaction-pool"
+	models "github.com/philohsophy/dummy-blockchain-models"
+	main "github.com/philohsophy/transaction-pool"
 )
 
 var a main.App
@@ -49,19 +50,19 @@ func clearTable() {
 	a.DB.Exec("DELETE FROM transactions *")
 }
 
-func createTransactions(count int) []main.Transaction {
+func createTransactions(count int) []models.Transaction {
 	if count < 1 {
 		count = 1
 	}
 
-	recipientAddress := main.Address{Name: "Foo", Street: "FooStreet", HouseNumber: "1", Town: "FooTown"}
+	recipientAddress := models.Address{Name: "Foo", Street: "FooStreet", HouseNumber: "1", Town: "FooTown"}
 	recipientAddressJson, _ := json.Marshal(recipientAddress)
-	senderAddress := main.Address{Name: "Bar", Street: "BarStreet", HouseNumber: "1", Town: "BarTown"}
+	senderAddress := models.Address{Name: "Bar", Street: "BarStreet", HouseNumber: "1", Town: "BarTown"}
 	senderAddressJson, _ := json.Marshal(senderAddress)
 
-	var transactions = make([]main.Transaction, count)
+	var transactions = make([]models.Transaction, count)
 	for i := 0; i < count; i++ {
-		var t main.Transaction
+		var t models.Transaction
 		t.Id = uuid.New()
 		t.RecipientAddress = recipientAddress
 		t.SenderAddress = senderAddress

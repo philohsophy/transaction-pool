@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/lib/pq"
+	models "github.com/philohsophy/dummy-blockchain-models"
 )
 
 type App struct {
@@ -90,7 +91,7 @@ func (a *App) getTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t := Transaction{Id: id}
+	t := &Transaction{&models.Transaction{Id: id}} // see https://stackoverflow.com/a/60518886
 	if err := t.getTransaction(a.DB); err != nil {
 		switch err {
 		case sql.ErrNoRows:
@@ -138,7 +139,7 @@ func (a *App) deleteTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t := Transaction{Id: id}
+	t := &Transaction{&models.Transaction{Id: id}} // see https://stackoverflow.com/a/60518886
 	if err := t.deleteTransaction(a.DB); err != nil {
 		switch err {
 		case sql.ErrNoRows:
@@ -173,7 +174,7 @@ func (a *App) getTransactions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	payload := struct {
-		Transactions []Transaction `json:"transactions"`
+		Transactions []models.Transaction `json:"transactions"`
 	}{
 		Transactions: transactions,
 	}
