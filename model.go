@@ -22,7 +22,6 @@ type Transaction struct {
 }
 
 func (t *Transaction) createTransaction(db *sql.DB) error {
-	//t{&models.Transaction{Id: uuid.New()}}
 	t.Id = uuid.New()
 	recipientAddressJson, _ := json.Marshal(t.RecipientAddress)
 	senderAddressJson, _ := json.Marshal(t.SenderAddress)
