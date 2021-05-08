@@ -9,4 +9,4 @@ docker run -it --rm \
 -e TRANSACTION_POOL_DB_PASSWORD=postgres \
 -e TRANSACTION_POOL_DB_NAME=postgres \
 --name transaction-pool \
-transaction-pool:0.0.1
+philohsophy/transaction-pool:0.1.0

@@ -12,7 +12,8 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	main "github.com/philohsophy/dummy-blockchain-transaction-pool"
+	models "github.com/philohsophy/dummy-blockchain-models"
+	main "github.com/philohsophy/transaction-pool"
 )
 
 var a main.App
@@ -49,19 +50,19 @@ func clearTable() {
 	a.DB.Exec("DELETE FROM transactions *")
 }
 
-func createTransactions(count int) []main.Transaction {
+func createTransactions(count int) []models.Transaction {
 	if count < 1 {
 		count = 1
 	}
 
-	recipientAddress := main.Address{Name: "Foo", Street: "FooStreet", HouseNumber: "1", Town: "FooTown"}
+	recipientAddress := models.Address{Name: "Foo", Street: "FooStreet", HouseNumber: "1", Town: "FooTown"}
 	recipientAddressJson, _ := json.Marshal(recipientAddress)
-	senderAddress := main.Address{Name: "Bar", Street: "BarStreet", HouseNumber: "1", Town: "BarTown"}
+	senderAddress := models.Address{Name: "Bar", Street: "BarStreet", HouseNumber: "1", Town: "BarTown"}
 	senderAddressJson, _ := json.Marshal(senderAddress)
 
-	var transactions = make([]main.Transaction, count)
+	var transactions = make([]models.Transaction, count)
 	for i := 0; i < count; i++ {
-		var t main.Transaction
+		var t models.Transaction
 		t.Id = uuid.New()
 		t.RecipientAddress = recipientAddress
 		t.SenderAddress = senderAddress
@@ -261,7 +262,7 @@ func TestCreateTransaction(t *testing.T) {
 				}
 			}`)
 
-		for missingElement, invalidTransaction := range invalidTransactions {
+		for _, invalidTransaction := range invalidTransactions {
 			req, _ := http.NewRequest("POST", "/transactions", bytes.NewBuffer(invalidTransaction))
 			req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
@@ -270,16 +271,17 @@ func TestCreateTransaction(t *testing.T) {
 
 			var m map[string]string
 			json.Unmarshal(response.Body.Bytes(), &m)
-			expectedErrorMsg := fmt.Sprintf("Invalid transaction: missing '%s'", missingElement)
+			expectedErrorMsg := "Invalid transaction"
 			if m["error"] != expectedErrorMsg {
 				t.Errorf("Expected the 'error' key of the response to be set to '%s'. Got '%s'", expectedErrorMsg, m["error"])
 			}
 		}
 	})
 
-	t.Run("invalid json", func(t *testing.T) {
+	t.Run("Malformed JSON / invalid Transaction", func(t *testing.T) {
+		var invalidTransactions = make(map[string][]byte)
 		// missing ',' between recipientAddress and senderAddress --> invalid JSON
-		malformedJson := []byte(`
+		invalidTransactions["malformed json"] = []byte(`
 		{
 			"recipientAddress":{
 				"name": "Alan",
@@ -295,16 +297,38 @@ func TestCreateTransaction(t *testing.T) {
 			},
 			"value": 100.21
 		}`)
-		req, _ := http.NewRequest("POST", "/transactions", bytes.NewBuffer(malformedJson))
-		req.Header.Set("Content-Type", "application/json; charset=UTF-8")
-		response := executeRequest(req)
-		checkResponseCode(t, http.StatusBadRequest, response.Code)
 
-		var m map[string]string
-		json.Unmarshal(response.Body.Bytes(), &m)
-		expectedErrorMsg := "Invalid JSON"
-		if m["error"] != expectedErrorMsg {
-			t.Errorf("Expected the 'error' key of the response to be set to '%s'. Got '%s'", expectedErrorMsg, m["error"])
+		// senderAddress.houseNumber is int instead of string --> invalid Transaction schema
+		invalidTransactions["invalid transaction schema"] = []byte(`
+		{
+			"recipientAddress":{
+				"name": "Alan",
+				"street": "Baker Street",
+				"houseNumber": "221B",
+				"town": "London"
+			},
+			"senderAddress": {
+				"name": "Bob",
+				"street": "Hauptstrasse",
+				"houseNumber": 1,
+				"town": "Berlin"
+			},
+			"value": 100.21
+		}`)
+
+		for _, invalidTransaction := range invalidTransactions {
+			req, _ := http.NewRequest("POST", "/transactions", bytes.NewBuffer(invalidTransaction))
+			req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+
+			response := executeRequest(req)
+			checkResponseCode(t, http.StatusBadRequest, response.Code)
+
+			var m map[string]string
+			json.Unmarshal(response.Body.Bytes(), &m)
+			expectedErrorMsg := "Malformed JSON / invalid Transaction schema"
+			if m["error"] != expectedErrorMsg {
+				t.Errorf("Expected the 'error' key of the response to be set to '%s'. Got '%s'", expectedErrorMsg, m["error"])
+			}
 		}
 	})
 }
