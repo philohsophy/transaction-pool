@@ -109,7 +109,7 @@ func (a *App) createTransaction(w http.ResponseWriter, r *http.Request) {
 	var t Transaction
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&t); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid JSON")
+		respondWithError(w, http.StatusBadRequest, "Malformed JSON / invalid Transaction schema")
 		return
 	}
 	defer r.Body.Close()

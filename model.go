@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"reflect"
 
 	"github.com/google/uuid"
 	models "github.com/philohsophy/dummy-blockchain-models"
@@ -23,18 +22,12 @@ type Transaction struct {
 
 func (t *Transaction) createTransaction(db *sql.DB) error {
 	t.Id = uuid.New()
+	if !t.IsValid() {
+		return &InvalidTransactionError{err: "Invalid transaction"}
+	}
+
 	recipientAddressJson, _ := json.Marshal(t.RecipientAddress)
 	senderAddressJson, _ := json.Marshal(t.SenderAddress)
-
-	if reflect.ValueOf(t.RecipientAddress).IsZero() {
-		return &InvalidTransactionError{err: "Invalid transaction: missing 'recipientAddress'"}
-	}
-	if reflect.ValueOf(t.SenderAddress).IsZero() {
-		return &InvalidTransactionError{err: "Invalid transaction: missing 'senderAddress'"}
-	}
-	if reflect.ValueOf(t.Value).IsZero() {
-		return &InvalidTransactionError{err: "Invalid transaction: missing 'value'"}
-	}
 
 	_, err := db.Exec(`
 		INSERT INTO transactions

@@ -262,7 +262,7 @@ func TestCreateTransaction(t *testing.T) {
 				}
 			}`)
 
-		for missingElement, invalidTransaction := range invalidTransactions {
+		for _, invalidTransaction := range invalidTransactions {
 			req, _ := http.NewRequest("POST", "/transactions", bytes.NewBuffer(invalidTransaction))
 			req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
@@ -271,16 +271,17 @@ func TestCreateTransaction(t *testing.T) {
 
 			var m map[string]string
 			json.Unmarshal(response.Body.Bytes(), &m)
-			expectedErrorMsg := fmt.Sprintf("Invalid transaction: missing '%s'", missingElement)
+			expectedErrorMsg := "Invalid transaction"
 			if m["error"] != expectedErrorMsg {
 				t.Errorf("Expected the 'error' key of the response to be set to '%s'. Got '%s'", expectedErrorMsg, m["error"])
 			}
 		}
 	})
 
-	t.Run("invalid json", func(t *testing.T) {
+	t.Run("Malformed JSON / invalid Transaction", func(t *testing.T) {
+		var invalidTransactions = make(map[string][]byte)
 		// missing ',' between recipientAddress and senderAddress --> invalid JSON
-		malformedJson := []byte(`
+		invalidTransactions["malformed json"] = []byte(`
 		{
 			"recipientAddress":{
 				"name": "Alan",
@@ -296,16 +297,38 @@ func TestCreateTransaction(t *testing.T) {
 			},
 			"value": 100.21
 		}`)
-		req, _ := http.NewRequest("POST", "/transactions", bytes.NewBuffer(malformedJson))
-		req.Header.Set("Content-Type", "application/json; charset=UTF-8")
-		response := executeRequest(req)
-		checkResponseCode(t, http.StatusBadRequest, response.Code)
 
-		var m map[string]string
-		json.Unmarshal(response.Body.Bytes(), &m)
-		expectedErrorMsg := "Invalid JSON"
-		if m["error"] != expectedErrorMsg {
-			t.Errorf("Expected the 'error' key of the response to be set to '%s'. Got '%s'", expectedErrorMsg, m["error"])
+		// senderAddress.houseNumber is int instead of string --> invalid Transaction schema
+		invalidTransactions["invalid transaction schema"] = []byte(`
+		{
+			"recipientAddress":{
+				"name": "Alan",
+				"street": "Baker Street",
+				"houseNumber": "221B",
+				"town": "London"
+			},
+			"senderAddress": {
+				"name": "Bob",
+				"street": "Hauptstrasse",
+				"houseNumber": 1,
+				"town": "Berlin"
+			},
+			"value": 100.21
+		}`)
+
+		for _, invalidTransaction := range invalidTransactions {
+			req, _ := http.NewRequest("POST", "/transactions", bytes.NewBuffer(invalidTransaction))
+			req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+
+			response := executeRequest(req)
+			checkResponseCode(t, http.StatusBadRequest, response.Code)
+
+			var m map[string]string
+			json.Unmarshal(response.Body.Bytes(), &m)
+			expectedErrorMsg := "Malformed JSON / invalid Transaction schema"
+			if m["error"] != expectedErrorMsg {
+				t.Errorf("Expected the 'error' key of the response to be set to '%s'. Got '%s'", expectedErrorMsg, m["error"])
+			}
 		}
 	})
 }
