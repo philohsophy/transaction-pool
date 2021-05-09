@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feat/#6_CICD
   pull_request:
     branches:
       - main
@@ -38,4 +37,3 @@ jobs:
         TRANSACTION_POOL_DB_PASSWORD: postgres
         TRANSACTION_POOL_DB_NAME: postgres
       run: go test -v ./...
-      
