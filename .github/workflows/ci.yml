@@ -1,4 +1,4 @@
-name: Go
+name: CI
 
 on:
   push:
@@ -10,9 +10,15 @@ on:
       - main
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13.2-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_PASSWORD: postgres
     steps:
     - uses: actions/checkout@v2
 
@@ -25,6 +31,10 @@ jobs:
       run: go build -v ./...
 
     - name: Test
-      run: |
-        ./scripts/run_database.sh
-        ./scripts/run_tests.sh
+      env:
+        TRANSACTION_POOL_DB_HOST: localhost
+        TRANSACTION_POOL_DB_PORT: 5432
+        TRANSACTION_POOL_DB_USERNAME: postgres
+        TRANSACTION_POOL_DB_PASSWORD: postgres
+        TRANSACTION_POOL_DB_NAME: postgres
+      run: go test -v ./...
