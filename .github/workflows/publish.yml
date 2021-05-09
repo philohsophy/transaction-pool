@@ -11,6 +11,16 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
+      - name: Preparation
+        id: prep
+        run: |
+          IMAGE="${{ github.repository }}"
+          TAGS="${IMAGE}:${{ github.sha }}"
+          if [[ $GITHUB_REF == ref/head/master ]]; then
+            TAGS="${TAGS},${IMAGE}:latest"
+          fi
+          echo ::set-output name=tags::${TAGS}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
@@ -24,7 +34,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: ${GITHUB_REPOSITORY}:test
+          tags: ${{ steps.prep.outputs.tags }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
