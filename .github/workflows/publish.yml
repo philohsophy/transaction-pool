@@ -3,29 +3,34 @@ name: CI
 on:
   push:
     branches:
-      - feat/#6_CICD
+      - 'main'
     tags:
-      - v[0-9]+.[0-9]+.[0-9]+
+      - 'v*'
+  pull_request:
+    branches:
+      - 'main'
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - name: show env
-        run: env
-      - name: Preparation
-        id: prep
-        run: |
-          IMAGE="${{ github.repository }}"
-          TAGS="${IMAGE}:${{ github.sha }}"
-          if [[ $GITHUB_REF == ref/head/master ]]; then
-            TAGS="${TAGS},${IMAGE}:latest"
-          fi
-          echo ::set-output name=tags::${TAGS}
-      - name: Set up Docker Buildx
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+      - 
+        name: Docker meta
+        id: meta
+        uses: crazy-max/ghaction-docker-meta@v2
+        with:
+          images: ${GITHUB_REPOSITORY}
+      - 
+        name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
-
-      - name: Login to Dockerhub
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - 
+        name: Login to Dockerhub
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -34,8 +39,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          push: true
-          tags: ${{ steps.prep.outputs.tags }}
-
-      - name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
