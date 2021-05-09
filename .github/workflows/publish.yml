@@ -11,7 +11,8 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: show env
+        run: env
       - name: Preparation
         id: prep
         run: |
