@@ -38,3 +38,4 @@ jobs:
         TRANSACTION_POOL_DB_PASSWORD: postgres
         TRANSACTION_POOL_DB_NAME: postgres
       run: go test -v ./...
+      
