@@ -1,5 +1,7 @@
 # transaction-pool
 
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/philohsophy/transaction-pool/CI/main)
+
 Part of [Dummy-Blockchain project](https://github.com/users/philohsophy/projects/1)
 
 ## Outline
