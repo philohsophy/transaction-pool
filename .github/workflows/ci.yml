@@ -49,7 +49,7 @@ jobs:
         TRANSACTION_POOL_DB_USERNAME: postgres
         TRANSACTION_POOL_DB_PASSWORD: postgres
         TRANSACTION_POOL_DB_NAME: postgres
-      run: go test -v ./...
+      run: go test -v ./... -coverprofile=coverage.out
 
   publish:
     runs-on: ubuntu-latest
