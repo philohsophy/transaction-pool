@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
-	models "github.com/philohsophy/dummy-blockchain-models"
+	models "github.com/philohsophy/blockchain-models"
 )
 
 type InvalidTransactionError struct {

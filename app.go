@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/lib/pq"
-	models "github.com/philohsophy/dummy-blockchain-models"
+	models "github.com/philohsophy/blockchain-models"
 )
 
 type App struct {
